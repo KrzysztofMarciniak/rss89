@@ -1,4 +1,5 @@
 # rss89
+Inspired by [sfeed](https://codemadness.org/sfeed.html) 
 
 Minimal RSS/Atom reader in C89 (+ POSIX). Three commands, plain files, no libraries.
 
