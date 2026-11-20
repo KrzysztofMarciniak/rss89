@@ -111,3 +111,5 @@ Without `RSS89_HDR` the status is assumed to be 200 and 304 is not detected.
 	echo 'https://rss.arxiv.org/rss/math.PR' > ~/.rss89/config/arxiv-math/probability
 	echo 'https://rss.arxiv.org/rss/math.RA' > ~/.rss89/config/arxiv-math/rings-algebras
 
+#### Note:
+Reading arXiv articles can be done with [pdfview](https://github.com/KrzysztofMarciniak/pdfview) or [web](https://github.com/krzysztofMarciniak/web).
