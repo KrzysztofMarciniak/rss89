@@ -3,7 +3,7 @@ Inspired by [sfeed](https://codemadness.org/sfeed.html)
 
 ![main](main.png)
 
-Minimal RSS/Atom reader in C89 (+ POSIX). Three commands, plain files, no libraries.
+Minimal RSS/Atom reader in C89 (+ POSIX). Two commands, plain files, no libraries.
 
 | Command | Purpose |
 | --- | --- |
