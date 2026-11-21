@@ -1,6 +1,5 @@
 # rss89
 Inspired by [sfeed](https://codemadness.org/sfeed.html) 
-
 ![main](main.png)
 
 Minimal RSS/Atom reader in C89 (+ POSIX). Two commands, plain files, no libraries.
@@ -35,6 +34,11 @@ Cached data is stored in `~/.rss89/feeds/<collection>/<feed>/feed.xml`.
 
 Archives: every fetch that brings new items also saves a snapshot (UTC) to
 `~/.rss89/feeds/<collection>/<feed>/archives/YYYY-MM-DD/HHMMSS.xml`.
+
+##### No curl/wget?
+[fetch89](https://github.com/KrzysztofMarciniak/fetch89) - Fetch a URL over HTTP or HTTPS and print the body. One C89 file.
+	
+	export RSS89_FETCH='fetch89 "$RSS89_URL" -o "$RSS89_OUT"'
 
 ## Usage
 
