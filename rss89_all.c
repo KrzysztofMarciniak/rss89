@@ -4,10 +4,13 @@
  * when that fetch has returned. each fetch is one rss_fetch() call in a
  * child process; swap fork() for pthread_create() in job_start() to use
  * threads, rss_fetch() shares no state.
+ * -DRSS89_NO_PARALLEL: no fork/pipe/wait, feeds are fetched one by one.
  */
 #include "rss89.h"
+#ifndef RSS89_NO_PARALLEL
 #include <fcntl.h>
 #include <sys/wait.h>
+#endif
 
 #define MAXHOST 8
 #define MAXTOTAL 32
@@ -90,6 +93,27 @@ static void scan(void)
     qsort(jobs, (size_t)njobs, sizeof *jobs, cmpjob);
 }
 
+static void report(struct job *j, struct fetchres *r, struct stats *s)
+{
+    char name[520];
+
+    sprintf(name, "%s/%s", j->coll, j->feed);
+    j->state = 2;
+    if (r->rc == FETCH_OK) {
+        s->updated++;
+        s->newitems += r->newitems;
+        printf("%-10s%-28s%d  %d items\n", "[OK]", name, r->status, r->items);
+    } else if (r->rc == FETCH_UNCHANGED) {
+        s->unchanged++;
+        printf("%-10s%-28s%s\n", "[304]", name, "unchanged");
+    } else {
+        s->failed++;
+        printf("%-10s%-28s%s\n", "[ERROR]", name, r->err);
+    }
+    fflush(stdout);
+}
+
+#ifndef RSS89_NO_PARALLEL
 static int job_start(struct job *j)
 {
     int fd[2], nul;
@@ -118,30 +142,16 @@ static int job_start(struct job *j)
 static void job_finish(struct job *j, struct stats *s)
 {
     struct fetchres r;
-    char name[520];
     int n;
 
-    sprintf(name, "%s/%s", j->coll, j->feed);
     n = (int)read(j->fd, &r, sizeof r);
     close(j->fd);
-    j->state = 2;
     if (n != (int)sizeof r) {
         memset(&r, 0, sizeof r);
         r.rc = FETCH_ERROR;
         strcpy(r.err, "fetch process failed");
     }
-    if (r.rc == FETCH_OK) {
-        s->updated++;
-        s->newitems += r.newitems;
-        printf("%-10s%-28s%d  %d items\n", "[OK]", name, r.status, r.items);
-    } else if (r.rc == FETCH_UNCHANGED) {
-        s->unchanged++;
-        printf("%-10s%-28s%s\n", "[304]", name, "unchanged");
-    } else {
-        s->failed++;
-        printf("%-10s%-28s%s\n", "[ERROR]", name, r.err);
-    }
-    fflush(stdout);
+    report(j, &r, s);
 }
 
 static int host_running(const char *host)
@@ -152,11 +162,16 @@ static int host_running(const char *host)
     return n;
 }
 
+#endif
+
 int rss_fetch_all(void)
 {
     struct stats s;
-    int i, running, total, st;
+    int i, total;
+#ifndef RSS89_NO_PARALLEL
+    int running, st;
     pid_t pid;
+#endif
 
     memset(&s, 0, sizeof s);
     printf("rss89: scanning ~/.rss89/config\n\n");
@@ -165,6 +180,13 @@ int rss_fetch_all(void)
     fflush(stdout);
 
     total = njobs;
+#ifdef RSS89_NO_PARALLEL
+    for (i = 0; i < njobs; i++) {
+        struct fetchres r;
+        rss_fetch(jobs[i].coll, jobs[i].feed, &r);
+        report(&jobs[i], &r, &s);
+    }
+#else
     for (;;) {
         running = 0;
         for (i = 0; i < njobs; i++) if (jobs[i].state == 1) running++;
@@ -185,6 +207,7 @@ int rss_fetch_all(void)
         for (i = 0; i < njobs; i++)
             if (jobs[i].state == 1 && jobs[i].pid == pid) { job_finish(&jobs[i], &s); break; }
     }
+#endif
 
     printf("\nUpdate complete.\n\n");
     printf("Feeds:     %d\n", total);

@@ -13,7 +13,7 @@ Minimal RSS/Atom reader in C89 (+ POSIX). Two commands, plain files, no librarie
 
 ## Compile
 
-Needs a C compiler, `make`, a POSIX system and a download tool (curl by default).
+Needs a C compiler, `make`, a POSIX system and a download tool (wget by default, curl with `FEATURES=-DRSS89_USE_CURL`).
 
     make
 
@@ -63,7 +63,7 @@ Cron, update every 30 minutes:
 
 ## Choosing the download tool
 
-`RSS89_FETCH` is a shell command run for every feed. Default is curl. Variables it receives:
+`RSS89_FETCH` is a shell command run for every feed. Default is wget. Variables it receives:
 
 | Variable | Meaning |
 | --- | --- |
@@ -74,9 +74,21 @@ Cron, update every 30 minutes:
 
 Exit code 0 means success.
 
-    export RSS89_FETCH='wget -q -O "$RSS89_OUT" "$RSS89_URL"'
+    export RSS89_FETCH='curl -sSL -D "$RSS89_HDR" -o "$RSS89_OUT" "$RSS89_URL"'
 
 Without `RSS89_HDR` the status is assumed to be 200 and 304 is not detected.
+
+## Build flags
+
+    make FEATURES="-DRSS89_USE_CURL -DRSS89_NO_ARCHIVE"
+
+| Flag | Effect |
+| --- | --- |
+| `-DRSS89_USE_CURL` | default fetcher is curl |
+| `-DRSS89_NO_ENV` | ignore `RSS89_FETCH`, use the built-in command only |
+| `-DRSS89_NO_ARCHIVE` | no archive snapshots |
+| `-DRSS89_NO_HDR` | no HTTP status / 304 handling (no `date`, `grep` needed) |
+| `-DRSS89_NO_PARALLEL` | no fork/pipe/wait, feeds fetched one by one |
 
 ## Exit codes
 

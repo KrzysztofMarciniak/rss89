@@ -13,11 +13,30 @@
 #include <stdarg.h>
 #include <sys/wait.h>
 
-#define DEFAULT_FETCH \
+#ifdef RSS89_USE_CURL
+# ifdef RSS89_NO_HDR
+#  define DEFAULT_FETCH "curl -sSL --max-time 30 -o \"$RSS89_OUT\" \"$RSS89_URL\""
+# else
+#  define DEFAULT_FETCH \
     "if [ -f \"$RSS89_OLD\" ]; then " \
     "curl -sSL --max-time 30 -z \"$RSS89_OLD\" -D \"$RSS89_HDR\" -o \"$RSS89_OUT\" \"$RSS89_URL\"; " \
     "else " \
     "curl -sSL --max-time 30 -D \"$RSS89_HDR\" -o \"$RSS89_OUT\" \"$RSS89_URL\"; fi"
+# endif
+#else
+/* wget: -S puts the response headers in the -o log (indented, parse_hdr
+ * skips the indent). wget exits 8 on a 304, so that case is mapped to 0. */
+# ifdef RSS89_NO_HDR
+#  define DEFAULT_FETCH "wget -q -T 30 -O \"$RSS89_OUT\" \"$RSS89_URL\""
+# else
+#  define DEFAULT_FETCH \
+    "ims=; " \
+    "if [ -f \"$RSS89_OLD\" ]; then " \
+    "ims=\"If-Modified-Since: $(LC_ALL=C date -u -r \"$RSS89_OLD\" '+%a, %d %b %Y %H:%M:%S GMT')\"; fi; " \
+    "wget -S -T 30 ${ims:+--header=\"$ims\"} -o \"$RSS89_HDR\" -O \"$RSS89_OUT\" \"$RSS89_URL\"; rc=$?; " \
+    "if [ $rc -eq 8 ] && grep -q 'HTTP/[0-9.]* 304' \"$RSS89_HDR\"; then exit 0; fi; exit $rc"
+# endif
+#endif
 
 static char *xdup(const char *s, size_t n)
 {
@@ -478,6 +497,7 @@ void rss_free(struct item *v, int n)
 
 /* ---------- fetching ---------- */
 
+#ifndef RSS89_NO_ARCHIVE
 static int copy_file(const char *from, const char *to)
 {
     FILE *a = fopen(from, "rb"), *b;
@@ -493,7 +513,6 @@ static int copy_file(const char *from, const char *to)
     if (fclose(b) != 0) ok = 0;
     return ok ? 0 : -1;
 }
-
 /* feeds/<coll>/<feed>/archives/YYYY-MM-DD/HHMMSS.xml (UTC) */
 static void archive(const char *coll, const char *feed, const char *cur,
                     struct fetchres *r)
@@ -513,6 +532,7 @@ static void archive(const char *coll, const char *feed, const char *cur,
     strcat(p, ".xml");
     if (copy_file(cur, p) == 0) sprintf(r->archive, "%s/%s", day, tm);
 }
+#endif
 
 static void seterr(struct fetchres *r, const char *msg)
 {
@@ -562,6 +582,7 @@ static void parse_hdr(const char *path, int *status, char *ctype, size_t n)
         if (e) *e++ = 0; else e = p + strlen(p);
         l = strlen(p);
         if (l && p[l - 1] == '\r') p[l - 1] = 0;
+        while (*p == ' ' || *p == '\t') p++;
         if (ci_prefix(p, "HTTP/")) {
             q = strchr(p, ' ');
             *status = q ? atoi(q + 1) : 0;
@@ -601,8 +622,12 @@ void rss_fetch(const char *coll, const char *feed, struct fetchres *r)
     remove(tmp);
     remove(hdr);
 
+#ifdef RSS89_NO_ENV
+    fc = DEFAULT_FETCH;
+#else
     fc = getenv("RSS89_FETCH");
     if (!fc || !*fc) fc = DEFAULT_FETCH;
+#endif
     u = shq(url); o = shq(tmp); h = shq(hdr); old = shq(cur); c = shq(fc);
     cmd = malloc(strlen(u) + strlen(o) + strlen(h) + strlen(old) + strlen(c) + 80);
     if (!cmd) { perror("malloc"); exit(1); }
@@ -612,11 +637,16 @@ void rss_fetch(const char *coll, const char *feed, struct fetchres *r)
 
     if (ret != 0) {
         code = (ret != -1 && WIFEXITED(ret)) ? WEXITSTATUS(ret) : -1;
-        /* curl exit codes */
         if (ret == -1) strcpy(msg, "cannot run fetch command");
+#ifdef RSS89_USE_CURL
         else if (code == 6) strcpy(msg, "cannot resolve host");
         else if (code == 7) strcpy(msg, "connection refused");
         else if (code == 28) strcpy(msg, "connection timeout");
+#else
+        else if (code == 4) strcpy(msg, "network failure");
+        else if (code == 5) strcpy(msg, "SSL failure");
+        else if (code == 8) strcpy(msg, "server error response");
+#endif
         else sprintf(msg, "fetch command failed (exit %d)", code);
         remove(tmp);
         remove(hdr);
@@ -660,5 +690,7 @@ void rss_fetch(const char *coll, const char *feed, struct fetchres *r)
 
     if (rename(tmp, cur) != 0) { remove(tmp); seterr(r, "cannot save"); return; }
     r->rc = FETCH_OK;
+#ifndef RSS89_NO_ARCHIVE
     if (r->newitems > 0) archive(coll, feed, cur, r);
+#endif
 }
