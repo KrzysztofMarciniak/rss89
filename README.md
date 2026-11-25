@@ -101,31 +101,37 @@ Without `RSS89_HDR` the status is assumed to be 200 and 304 is not detected.
 
 ## Recommended Feeds
 
-	# Create collection directories
-	mkdir -p ~/.rss89/config
+    # Create collection directories
+    mkdir -p ~/.rss89/config
 
-	# Security
-	mkdir -p ~/.rss89/config/security
-	echo 'https://www.welivesecurity.com/en/rss/feed/' > ~/.rss89/config/security/eset
-	echo 'https://unit42.paloaltonetworks.com/feed/' > ~/.rss89/config/security/unit42
-	echo 'https://undeadly.org/cgi?action=rss' > ~/.rss89/config/security/undeadly
+    # Security
+    mkdir -p ~/.rss89/config/security
+    echo 'https://www.welivesecurity.com/en/rss/feed/' > ~/.rss89/config/security/eset
+    echo 'https://unit42.paloaltonetworks.com/feed/' > ~/.rss89/config/security/unit42
+    echo 'https://undeadly.org/cgi?action=rss' > ~/.rss89/config/security/undeadly
 
-	# arXiv - Computer Science
-	mkdir -p ~/.rss89/config/arxiv-cs
-	echo 'https://rss.arxiv.org/rss/cs.DC' > ~/.rss89/config/arxiv-cs/distributed
-	echo 'https://rss.arxiv.org/rss/cs.ET' > ~/.rss89/config/arxiv-cs/emerging-tech
-	echo 'https://rss.arxiv.org/rss/cs.FL' > ~/.rss89/config/arxiv-cs/formal-languages
-	echo 'https://rss.arxiv.org/rss/cs.NI' > ~/.rss89/config/arxiv-cs/networking
-	echo 'https://rss.arxiv.org/rss/cs.OS' > ~/.rss89/config/arxiv-cs/operating-systems
-	echo 'https://rss.arxiv.org/rss/cs.PL' > ~/.rss89/config/arxiv-cs/programming-languages
-	echo 'https://rss.arxiv.org/rss/cs.SE' > ~/.rss89/config/arxiv-cs/software-engineering
-	echo 'https://rss.arxiv.org/rss/cs.CR' > ~/.rss89/config/arxiv-cs/cryptography
+    # arXiv - Computer Science
+    mkdir -p ~/.rss89/config/arxiv-cs
+    echo 'https://rss.arxiv.org/rss/cs.DC' > ~/.rss89/config/arxiv-cs/distributed
+    echo 'https://rss.arxiv.org/rss/cs.ET' > ~/.rss89/config/arxiv-cs/emerging-tech
+    echo 'https://rss.arxiv.org/rss/cs.FL' > ~/.rss89/config/arxiv-cs/formal-languages
+    echo 'https://rss.arxiv.org/rss/cs.NI' > ~/.rss89/config/arxiv-cs/networking
+    echo 'https://rss.arxiv.org/rss/cs.OS' > ~/.rss89/config/arxiv-cs/operating-systems
+    echo 'https://rss.arxiv.org/rss/cs.PL' > ~/.rss89/config/arxiv-cs/programming-languages
+    echo 'https://rss.arxiv.org/rss/cs.SE' > ~/.rss89/config/arxiv-cs/software-engineering
+    echo 'https://rss.arxiv.org/rss/cs.CR' > ~/.rss89/config/arxiv-cs/cryptography
 
-	# arXiv - Mathematics
-	mkdir -p ~/.rss89/config/arxiv-math
-	echo 'https://rss.arxiv.org/rss/math.IT' > ~/.rss89/config/arxiv-math/information-theory
-	echo 'https://rss.arxiv.org/rss/math.PR' > ~/.rss89/config/arxiv-math/probability
-	echo 'https://rss.arxiv.org/rss/math.RA' > ~/.rss89/config/arxiv-math/rings-algebras
+    # arXiv - Mathematics
+    mkdir -p ~/.rss89/config/arxiv-math
+    echo 'https://rss.arxiv.org/rss/math.IT' > ~/.rss89/config/arxiv-math/information-theory
+    echo 'https://rss.arxiv.org/rss/math.PR' > ~/.rss89/config/arxiv-math/probability
+    echo 'https://rss.arxiv.org/rss/math.RA' > ~/.rss89/config/arxiv-math/rings-algebras
+
+    # ScienceDirect - Computer Science
+    mkdir -p ~/.rss89/config/sciencedirect
+    echo 'https://rss.sciencedirect.com/publication/science/01641212' > ~/.rss89/config/sciencedirect/systems-and-software
+    echo 'https://rss.sciencedirect.com/publication/science/09505849' > ~/.rss89/config/sciencedirect/software-technology
+    echo 'https://rss.sciencedirect.com/publication/science/27729184' > ~/.rss89/config/sciencedirect/cybersecurity-and-applications
 
 #### Note:
 Reading arXiv articles can be done with [pdfview](https://github.com/KrzysztofMarciniak/pdfview) or [web](https://github.com/krzysztofMarciniak/web).

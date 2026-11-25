@@ -223,7 +223,8 @@ static void strip_tags(char *s)
     for (; *r; r++) {
         if (in) {
             if (*r == '>') in = 0;
-        } else if (*r == '<') {
+        } else if (*r == '<' && (isalpha((unsigned char)r[1]) || r[1] == '/' ||
+                                 r[1] == '!' || r[1] == '?')) {
             in = 1;
             if (block_tag(r + 1)) *w++ = ' ';
         } else {
@@ -425,6 +426,26 @@ static time_t parse_date(const char *s)
     return (time_t)days_from_civil(y, mo, d) * 86400 + h * 3600 + mi * 60 + sec - off * 60;
 }
 
+/* sciencedirect has no pubDate, only "Publication date: March 2027" in the
+ * description. accepts "Month YYYY" and "D Month YYYY". */
+static time_t desc_date(const char *desc)
+{
+    const char *p = strstr(desc, "Publication date:");
+    char *e;
+    int mo;
+    long y;
+    if (!p) return 0;
+    p += 17;
+    while (isspace((unsigned char)*p)) p++;
+    if (isdigit((unsigned char)*p)) return parse_date(p);
+    mo = month_of(p);
+    if (!mo) return 0;
+    while (isalpha((unsigned char)*p)) p++;
+    y = strtol(p, &e, 10);
+    if (e == p || y < 1970 || y > 2999) return 0;
+    return (time_t)days_from_civil(y, mo, 1) * 86400;
+}
+
 void rss_date(time_t t, char *out, size_t n)
 {
     struct tm *g = t ? gmtime(&t) : NULL;
@@ -441,7 +462,7 @@ static void parse_item(const char *blk, struct item *it)
     char *d;
     int i;
 
-    it->title = extract(blk, "title", 512, 0);
+    it->title = extract(blk, "title", 512, 1);
     if (!it->title) it->title = xdup("(untitled)", 10);
     it->link = extract_link(blk);
     it->desc = NULL;
@@ -455,6 +476,7 @@ static void parse_item(const char *blk, struct item *it)
         d = extract(blk, dtags[i], 128, 0);
         if (d) { it->ts = parse_date(d); free(d); }
     }
+    if (!it->ts && it->desc) it->ts = desc_date(it->desc);
 }
 
 int rss_parse(const char *buf, struct item **out)
